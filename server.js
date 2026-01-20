@@ -117,12 +117,12 @@ app.post('/api/fetch-email', async (req, res) => {
     }
 });
 
-// Run comparison
+// Run comparison (STATELESS - receives document text from client)
 app.post('/api/compare', async (req, res) => {
     try {
-        const { url, config } = req.body;
+        const { url, config, documentText } = req.body;
 
-        if (!documentStore.text) {
+        if (!documentText) {
             return res.status(400).json({ error: 'Please upload a reference document first' });
         }
 
@@ -145,7 +145,7 @@ app.post('/api/compare', async (req, res) => {
 
         // Step 1: Run function-based comparison (strict)
         const functionResults = functionComparator.compare(
-            documentStore.text,
+            documentText,
             emailContent,
             comparisonConfig
         );
@@ -160,7 +160,7 @@ app.post('/api/compare', async (req, res) => {
             // Step 3: Run AI semantic comparison
             try {
                 semanticResults = await semanticComparator.compare(
-                    documentStore.text,
+                    documentText,
                     emailContent.text
                 );
             } catch (aiError) {
@@ -208,6 +208,18 @@ app.get('/api/document', (req, res) => {
         });
     } else {
         res.json({ hasDocument: false });
+    }
+});
+
+// Get full document text (for stateless client storage)
+app.get('/api/document/text', (req, res) => {
+    if (documentStore.text) {
+        res.json({
+            text: documentStore.text,
+            filename: documentStore.filename
+        });
+    } else {
+        res.json({ text: null });
     }
 });
 

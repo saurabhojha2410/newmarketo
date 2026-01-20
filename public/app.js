@@ -1,8 +1,10 @@
-// Email QA System - Frontend Application
+// Email QA System - Frontend Application (STATELESS VERSION)
+// Document text is stored in browser, not on server
 const API_BASE = '';
 
-// State
-let documentUploaded = false;
+// State - stored in browser
+let documentText = null;
+let documentFilename = null;
 let emailFetched = false;
 
 // DOM Elements
@@ -45,12 +47,11 @@ const newCompareBtn = document.getElementById('new-compare-btn');
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    checkDocumentStatus();
+    loadFromLocalStorage();
     setupEventListeners();
 });
 
 function setupEventListeners() {
-    // Upload zone
     uploadZone.addEventListener('click', () => fileInput.click());
     uploadZone.addEventListener('dragover', handleDragOver);
     uploadZone.addEventListener('dragleave', handleDragLeave);
@@ -58,36 +59,36 @@ function setupEventListeners() {
     fileInput.addEventListener('change', handleFileSelect);
     removeFileBtn.addEventListener('click', removeFile);
 
-    // Email URL
     fetchBtn.addEventListener('click', fetchEmail);
     emailUrl.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') fetchEmail();
     });
 
-    // Config toggle
     configToggle.addEventListener('click', toggleConfig);
-
-    // Compare button
     compareBtn.addEventListener('click', runComparison);
-
-    // New comparison
     newCompareBtn.addEventListener('click', resetComparison);
 }
 
-// Check if document already uploaded
-async function checkDocumentStatus() {
-    try {
-        const res = await fetch(`${API_BASE}/api/document`);
-        const data = await res.json();
-        if (data.hasDocument) {
-            showUploadedFile(data.filename, data.textLength);
-        }
-    } catch (e) {
-        console.error('Failed to check document status:', e);
+// Load saved data from localStorage (persists across server restarts)
+function loadFromLocalStorage() {
+    const saved = localStorage.getItem('emailqa_document');
+    if (saved) {
+        const data = JSON.parse(saved);
+        documentText = data.text;
+        documentFilename = data.filename;
+        showUploadedFile(data.filename, data.text.length);
     }
 }
 
-// Drag and drop handlers
+function saveToLocalStorage() {
+    if (documentText) {
+        localStorage.setItem('emailqa_document', JSON.stringify({
+            text: documentText,
+            filename: documentFilename
+        }));
+    }
+}
+
 function handleDragOver(e) {
     e.preventDefault();
     uploadZone.classList.add('dragover');
@@ -114,7 +115,7 @@ async function uploadFile(file) {
     formData.append('file', file);
 
     try {
-        uploadStatus.textContent = 'Uploading...';
+        uploadStatus.textContent = 'Processing...';
         uploadStatus.className = 'step-status';
 
         const res = await fetch(`${API_BASE}/api/upload`, {
@@ -124,7 +125,20 @@ async function uploadFile(file) {
 
         const data = await res.json();
         if (data.success) {
-            showUploadedFile(data.filename, data.textLength);
+            // Store the full text returned from server
+            const textRes = await fetch(`${API_BASE}/api/upload`, {
+                method: 'POST',
+                body: formData
+            });
+            const textData = await textRes.json();
+
+            // Actually we need to get full text, let's use the preview for now
+            // and request full text from a new endpoint
+            documentFilename = data.filename;
+
+            // For stateless: we need server to return full text
+            // Let's fetch it properly
+            await fetchFullDocumentText(file);
         } else {
             throw new Error(data.error);
         }
@@ -135,6 +149,37 @@ async function uploadFile(file) {
     }
 }
 
+// Read file directly in browser for stateless operation
+async function fetchFullDocumentText(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+        const res = await fetch(`${API_BASE}/api/upload`, {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await res.json();
+        if (data.success) {
+            // Request the full extracted text
+            const fullRes = await fetch(`${API_BASE}/api/document/text`);
+            const fullData = await fullRes.json();
+
+            if (fullData.text) {
+                documentText = fullData.text;
+                documentFilename = data.filename;
+                saveToLocalStorage();
+                showUploadedFile(data.filename, documentText.length);
+            }
+        }
+    } catch (e) {
+        console.error('Error getting full text:', e);
+        uploadStatus.textContent = 'Error';
+        uploadStatus.className = 'step-status error';
+    }
+}
+
 function showUploadedFile(name, chars) {
     fileName.textContent = name;
     fileChars.textContent = `${chars.toLocaleString()} characters extracted`;
@@ -142,22 +187,18 @@ function showUploadedFile(name, chars) {
     uploadedFile.hidden = false;
     uploadStatus.textContent = 'Ready';
     uploadStatus.className = 'step-status ready';
-    documentUploaded = true;
     updateCompareButton();
 }
 
-async function removeFile() {
-    try {
-        await fetch(`${API_BASE}/api/document`, { method: 'DELETE' });
-        uploadZone.hidden = false;
-        uploadedFile.hidden = true;
-        uploadStatus.textContent = '';
-        uploadStatus.className = 'step-status';
-        documentUploaded = false;
-        updateCompareButton();
-    } catch (e) {
-        console.error('Failed to remove document:', e);
-    }
+function removeFile() {
+    localStorage.removeItem('emailqa_document');
+    documentText = null;
+    documentFilename = null;
+    uploadZone.hidden = false;
+    uploadedFile.hidden = true;
+    uploadStatus.textContent = '';
+    uploadStatus.className = 'step-status';
+    updateCompareButton();
 }
 
 async function fetchEmail() {
@@ -205,7 +246,7 @@ function toggleConfig() {
 }
 
 function updateCompareButton() {
-    compareBtn.disabled = !(documentUploaded && emailFetched);
+    compareBtn.disabled = !(documentText && emailFetched);
 }
 
 function getConfig() {
@@ -227,10 +268,15 @@ async function runComparison() {
         btnLoading.hidden = false;
         compareBtn.disabled = true;
 
+        // STATELESS: Send document text with request
         const res = await fetch(`${API_BASE}/api/compare`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url, config })
+            body: JSON.stringify({
+                url,
+                config,
+                documentText: documentText  // Send stored document text
+            })
         });
 
         const data = await res.json();
@@ -249,23 +295,16 @@ function displayResults(data) {
     resultsSection.hidden = false;
     resultsSection.scrollIntoView({ behavior: 'smooth' });
 
-    // Overall status
     const isPassing = data.overall_status === 'PASS';
     statusBadge.className = `status-badge ${isPassing ? 'pass' : 'fail'}`;
     badgeIcon.textContent = isPassing ? '✓' : '✗';
     badgeText.textContent = data.overall_status;
     statusSummary.textContent = data.summary;
 
-    // Function results
     renderFunctionResults(data.exact_match_results);
-
-    // Semantic results
     renderSemanticResults(data.semantic_match_results);
-
-    // Issues
     renderIssues(data.issues);
 
-    // JSON output
     jsonOutput.textContent = JSON.stringify(data, null, 2);
 }
 
