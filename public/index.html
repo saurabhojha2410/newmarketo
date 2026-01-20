@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email QA System | Automated Comparison</title>
+    <meta name="description"
+        content="Compare email content against reference documents with AI-powered semantic analysis">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📧</text></svg>">
+</head>
+
+<body>
+    <div class="app">
+        <!-- Animated Background -->
+        <div class="bg-gradient"></div>
+        <div class="bg-orbs">
+            <div class="orb orb-1"></div>
+            <div class="orb orb-2"></div>
+            <div class="orb orb-3"></div>
+        </div>
+
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                        <polyline points="22,6 12,13 2,6" />
+                    </svg>
+                </div>
+                <span class="logo-text">Email QA</span>
+            </div>
+            <div class="header-badge">
+                <span class="pulse"></span>
+                Comparison System
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Step Cards -->
+            <div class="steps-container">
+                <!-- Step 1: Upload Document -->
+                <section class="card step-card" id="step-upload">
+                    <div class="step-header">
+                        <div class="step-number">1</div>
+                        <div class="step-info">
+                            <h2>Upload Reference Document</h2>
+                            <p>Upload your source document to compare against the email</p>
+                        </div>
+                        <div class="step-status" id="upload-status"></div>
+                    </div>
+
+                    <div class="upload-zone" id="upload-zone">
+                        <div class="upload-content">
+                            <div class="upload-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                                    <polyline points="17 8 12 3 7 8" />
+                                    <line x1="12" y1="3" x2="12" y2="15" />
+                                </svg>
+                            </div>
+                            <p class="upload-text">Drag & drop your file here or <span class="browse-link">browse</span>
+                            </p>
+                            <p class="upload-hint">Supports DOCX, PDF, TXT • Max 10MB</p>
+                        </div>
+                        <input type="file" id="file-input" accept=".docx,.pdf,.txt" hidden>
+                    </div>
+
+                    <div class="uploaded-file" id="uploaded-file" hidden>
+                        <div class="file-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                                <line x1="9" y1="15" x2="15" y2="15" />
+                            </svg>
+                        </div>
+                        <div class="file-info">
+                            <span class="file-name" id="file-name"></span>
+                            <span class="file-chars" id="file-chars"></span>
+                        </div>
+                        <button class="btn-icon" id="remove-file" title="Remove file">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18" />
+                                <line x1="6" y1="6" x2="18" y2="18" />
+                            </svg>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Step 2: Email URL -->
+                <section class="card step-card" id="step-url">
+                    <div class="step-header">
+                        <div class="step-number">2</div>
+                        <div class="step-info">
+                            <h2>Enter Email URL</h2>
+                            <p>Paste the "View in Browser" link from your marketing email</p>
+                        </div>
+                        <div class="step-status" id="url-status"></div>
+                    </div>
+
+                    <div class="url-input-wrapper">
+                        <div class="url-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="2" y1="12" x2="22" y2="12" />
+                                <path
+                                    d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
+                            </svg>
+                        </div>
+                        <input type="url" id="email-url" placeholder="https://view.example.com/email/..."
+                            class="url-input">
+                        <button class="btn-fetch" id="fetch-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="23 4 23 10 17 10" />
+                                <path d="M20.49 15a9 9 0 11-2.12-9.36L23 10" />
+                            </svg>
+                            Fetch
+                        </button>
+                    </div>
+
+                    <div class="email-preview" id="email-preview" hidden>
+                        <div class="preview-header">
+                            <span class="preview-label">Email Preview</span>
+                            <span class="preview-chars" id="email-chars"></span>
+                        </div>
+                        <div class="preview-content" id="preview-content"></div>
+                    </div>
+                </section>
+
+                <!-- Step 3: Configuration (Collapsible) -->
+                <section class="card step-card collapsible" id="step-config">
+                    <div class="step-header clickable" id="config-toggle">
+                        <div class="step-number">⚙</div>
+                        <div class="step-info">
+                            <h2>Advanced Configuration</h2>
+                            <p>Optional: Define CTAs, keywords, and compliance requirements</p>
+                        </div>
+                        <div class="collapse-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 9 12 15 18 9" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div class="config-content" id="config-content" hidden>
+                        <div class="config-grid">
+                            <div class="config-field">
+                                <label>Expected CTA Texts</label>
+                                <textarea id="cta-texts"
+                                    placeholder="Shop Now&#10;Learn More&#10;Get Started"></textarea>
+                                <span class="field-hint">One CTA per line</span>
+                            </div>
+                            <div class="config-field">
+                                <label>Expected CTA URLs</label>
+                                <textarea id="cta-urls"
+                                    placeholder="https://example.com/shop&#10;https://example.com/learn"></textarea>
+                                <span class="field-hint">Base URLs (tracking params ignored)</span>
+                            </div>
+                            <div class="config-field">
+                                <label>Required Keywords</label>
+                                <textarea id="keywords" placeholder="sale&#10;discount&#10;limited time"></textarea>
+                                <span class="field-hint">Keywords that must appear in email</span>
+                            </div>
+                            <div class="config-field">
+                                <label>Footer Compliance Text</label>
+                                <textarea id="footer-texts"
+                                    placeholder="All rights reserved&#10;Privacy Policy&#10;Terms of Service"></textarea>
+                                <span class="field-hint">Required legal/footer text</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Compare Button -->
+                <button class="btn-compare" id="compare-btn" disabled>
+                    <span class="btn-text">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                        </svg>
+                        Run Comparison
+                    </span>
+                    <span class="btn-loading" hidden>
+                        <div class="spinner"></div>
+                        Analyzing...
+                    </span>
+                </button>
+            </div>
+
+            <!-- Results Section -->
+            <section class="results-section" id="results-section" hidden>
+                <div class="results-header">
+                    <h2>QA Report</h2>
+                    <button class="btn-new" id="new-compare-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                        </svg>
+                        New Comparison
+                    </button>
+                </div>
+
+                <!-- Overall Status Badge -->
+                <div class="status-badge-container">
+                    <div class="status-badge" id="status-badge">
+                        <div class="badge-icon" id="badge-icon"></div>
+                        <div class="badge-text" id="badge-text"></div>
+                    </div>
+                    <p class="status-summary" id="status-summary"></p>
+                </div>
+
+                <!-- Results Breakdown -->
+                <div class="results-grid">
+                    <!-- Function Results -->
+                    <div class="card results-card">
+                        <div class="results-card-header">
+                            <h3>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="9 11 12 14 22 4" />
+                                    <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
+                                </svg>
+                                Function Checks
+                            </h3>
+                            <span class="card-badge" id="function-badge">--</span>
+                        </div>
+                        <div class="results-items" id="function-results"></div>
+                    </div>
+
+                    <!-- Semantic Results -->
+                    <div class="card results-card">
+                        <div class="results-card-header">
+                            <h3>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3" />
+                                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                                </svg>
+                                AI Semantic Analysis
+                            </h3>
+                            <span class="card-badge" id="semantic-badge">--</span>
+                        </div>
+                        <div class="results-items" id="semantic-results"></div>
+                    </div>
+                </div>
+
+                <!-- Issues List -->
+                <div class="card issues-card" id="issues-card" hidden>
+                    <div class="issues-header">
+                        <h3>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="12" y1="8" x2="12" y2="12" />
+                                <line x1="12" y1="16" x2="12.01" y2="16" />
+                            </svg>
+                            Issues Found
+                        </h3>
+                    </div>
+                    <ul class="issues-list" id="issues-list"></ul>
+                </div>
+
+                <!-- Raw JSON Toggle -->
+                <details class="json-details">
+                    <summary>View Raw JSON Report</summary>
+                    <pre class="json-output" id="json-output"></pre>
+                </details>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Email QA Comparison System • Built for Marketing Teams</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
